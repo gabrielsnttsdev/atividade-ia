@@ -1,6 +1,6 @@
 # Atividade IA
 
-Projeto desenvolvido para a disciplina de Programação Assistida por IA.
+Projeto desenvolvido para a disciplina de Fundamentos de Inteligência Artificial.
 
 ## Conteúdo
 - Aplicação com Teachable Machine publicada no GitHub Pages
