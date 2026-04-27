@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gabriel dos Santos Souza — Vision AI</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --bg:        #0a0a0f;
+      --surface:   #13131a;
+      --border:    #2a2a3a;
+      --accent:    #00e5ff;
+      --accent2:   #ff3cac;
+      --text:      #e8e8f0;
+      --muted:     #6b6b85;
+      --radius:    12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Noise grain overlay ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: .5;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 2.5rem 1.5rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, #0d0d18 0%, #0a0a0f 100%);
+    }
+
+    .site-title {
+      font-size: clamp(1.4rem, 5vw, 2.4rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+    }
+
+    .site-subtitle {
+      font-family: 'Space Mono', monospace;
+      font-size: .75rem;
+      color: var(--muted);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-top: .35rem;
+    }
+
+    /* ── Main card ── */
+    .main-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    /* ── Start button ── */
+    .btn-start {
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      padding: .9rem 2.2rem;
+      background: transparent;
+      border: 2px solid var(--accent);
+      border-radius: 50px;
+      color: var(--accent);
+      font-family: 'Space Mono', monospace;
+      font-size: .85rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: color .3s, box-shadow .3s;
+    }
+
+    .btn-start::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: var(--accent);
+      transform: translateX(-105%);
+      transition: transform .35s cubic-bezier(.4,0,.2,1);
+      z-index: 0;
+    }
+
+    .btn-start:hover::before { transform: translateX(0); }
+    .btn-start:hover {
+      color: var(--bg);
+      box-shadow: 0 0 28px rgba(0,229,255,.35);
+    }
+
+    .btn-start span, .btn-start i { position: relative; z-index: 1; }
+
+    .btn-start:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    /* ── Webcam container ── */
+    #webcam-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 220px;
+      background: #0d0d18;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      position: relative;
+    }
+
+    #webcam-container canvas {
+      border-radius: calc(var(--radius) - 1px);
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .cam-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .75rem;
+      color: var(--muted);
+    }
+
+    .cam-placeholder i { font-size: 2.8rem; }
+    .cam-placeholder p {
+      font-family: 'Space Mono', monospace;
+      font-size: .75rem;
+      letter-spacing: .06em;
+    }
+
+    /* ── Corner scan lines decorative ── */
+    .scan-corner {
+      position: absolute;
+      width: 22px; height: 22px;
+      border-color: var(--accent);
+      border-style: solid;
+      opacity: .5;
+    }
+    .scan-corner.tl { top: 8px; left: 8px; border-width: 2px 0 0 2px; }
+    .scan-corner.tr { top: 8px; right: 8px; border-width: 2px 2px 0 0; }
+    .scan-corner.bl { bottom: 8px; left: 8px; border-width: 0 0 2px 2px; }
+    .scan-corner.br { bottom: 8px; right: 8px; border-width: 0 2px 2px 0; }
+
+    /* ── Scanning animation line ── */
+    .scan-line {
+      display: none;
+      position: absolute;
+      left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      animation: scanMove 2s linear infinite;
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    @keyframes scanMove {
+      0%   { top: 0; opacity: 1; }
+      90%  { top: 100%; opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+
+    .scanning .scan-line { display: block; }
+
+    /* ── Labels / progress bars ── */
+    #label-container {
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+    }
+
+    .label-row { display: flex; flex-direction: column; gap: .3rem; }
+
+    .label-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .label-name {
+      font-family: 'Space Mono', monospace;
+      font-size: .75rem;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+
+    .label-pct {
+      font-family: 'Space Mono', monospace;
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 3ch;
+      text-align: right;
+    }
+
+    .progress {
+      height: 8px;
+      background: #1e1e2e;
+      border-radius: 99px;
+      overflow: visible;
+    }
+
+    .progress-bar {
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width .2s ease;
+      position: relative;
+      box-shadow: 0 0 10px rgba(0,229,255,.4);
+    }
+
+    /* top class highlight */
+    .label-row.top-class .label-name { color: var(--accent); }
+    .label-row.top-class .progress-bar { box-shadow: 0 0 16px rgba(0,229,255,.7); }
+
+    /* ── Status badge ── */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      font-family: 'Space Mono', monospace;
+      font-size: .7rem;
+      letter-spacing: .08em;
+      padding: .25rem .7rem;
+      border-radius: 50px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .status-badge .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+
+    .status-badge.active { border-color: var(--accent); color: var(--accent); }
+    .status-badge.active .dot {
+      background: var(--accent);
+      box-shadow: 0 0 6px var(--accent);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .5; transform: scale(1.4); }
+    }
+
+    /* ── Footer ── */
+    footer {
+      font-family: 'Space Mono', monospace;
+      font-size: .65rem;
+      color: var(--muted);
+      letter-spacing: .08em;
+      padding: 1.5rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    /* ── Responsive tweaks ── */
+    @media (max-width: 576px) {
+      header { padding: 1.5rem 1rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="container-lg">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+          <div class="site-title">Gabriel dos Santos Souza</div>
+          <div class="site-subtitle">Teachable Machine &mdash; Image Classifier</div>
+        </div>
+        <div id="status-badge" class="status-badge">
+          <span class="dot"></span> OFFLINE
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <main class="container-lg py-4 px-3">
+    <div class="row g-4">
+
+      <!-- Camera column -->
+      <div class="col-12 col-md-6">
+        <div class="main-card p-4 h-100 d-flex flex-column gap-4">
+
+          <div>
+            <h2 class="fs-6 fw-bold mb-1" style="letter-spacing:.04em;">Câmera</h2>
+            <p class="text-muted" style="font-size:.8rem; font-family:'Space Mono',monospace;">
+              Clique em <em>Iniciar</em> para ativar a webcam e o modelo.
+            </p>
+          </div>
+
+          <div id="webcam-container">
+            <div class="scan-corner tl"></div>
+            <div class="scan-corner tr"></div>
+            <div class="scan-corner bl"></div>
+            <div class="scan-corner br"></div>
+            <div class="scan-line"></div>
+
+            <div class="cam-placeholder" id="cam-placeholder">
+              <i class="bi bi-camera-video-off"></i>
+              <p>Câmera inativa</p>
+            </div>
+          </div>
+
+          <div class="mt-auto">
+            <button id="btn-start" class="btn-start w-100 justify-content-center" onclick="init()">
+              <i class="bi bi-camera-video-fill"></i>
+              <span>Iniciar câmera</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Results column -->
+      <div class="col-12 col-md-6">
+        <div class="main-card p-4 h-100 d-flex flex-column gap-4">
+
+          <div>
+            <h2 class="fs-6 fw-bold mb-1" style="letter-spacing:.04em;">Predições</h2>
+            <p class="text-muted" style="font-size:.8rem; font-family:'Space Mono',monospace;">
+              Correspondência de cada classe detectada pelo modelo.
+            </p>
+          </div>
+
+          <div id="label-container" class="flex-grow-1">
+            <!-- Bars inserted dynamically -->
+            <div class="d-flex align-items-center justify-content-center h-100" id="empty-state">
+              <div class="text-center" style="color:var(--muted);">
+                <i class="bi bi-graph-up" style="font-size:2rem;display:block;margin-bottom:.5rem;"></i>
+                <span style="font-family:'Space Mono',monospace;font-size:.75rem;letter-spacing:.06em;">
+                  Aguardando modelo...
+                </span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2024 Gabriel dos Santos Souza &mdash; Powered by Teachable Machine + TensorFlow.js
+  </footer>
+
+  <!-- TensorFlow + Teachable Machine -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const MODEL_URL = "https://teachablemachine.withgoogle.com/models/lveGKKsLG/";
+    let model, webcam, maxPredictions;
+    let labelRows = [];
+
+    async function init() {
+      const btn = document.getElementById('btn-start');
+      btn.disabled = true;
+      btn.querySelector('span').textContent = 'Carregando…';
+
+      try {
+        model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
+        maxPredictions = model.getTotalClasses();
+
+        webcam = new tmImage.Webcam(300, 300, true);
+        await webcam.setup();
+        await webcam.play();
+
+        // Replace placeholder with canvas
+        const container = document.getElementById('webcam-container');
+        document.getElementById('cam-placeholder').remove();
+        container.appendChild(webcam.canvas);
+        container.classList.add('scanning');
+
+        // Build progress bars
+        buildLabels();
+
+        // Update status
+        const badge = document.getElementById('status-badge');
+        badge.className = 'status-badge active';
+        badge.innerHTML = '<span class="dot"></span> AO VIVO';
+
+        btn.querySelector('span').textContent = 'Rodando…';
+
+        window.requestAnimationFrame(loop);
+      } catch (err) {
+        console.error(err);
+        btn.disabled = false;
+        btn.querySelector('span').textContent = 'Tentar novamente';
+      }
+    }
+
+    function buildLabels() {
+      const container = document.getElementById('label-container');
+      document.getElementById('empty-state')?.remove();
+      container.innerHTML = '';
+      labelRows = [];
+
+      for (let i = 0; i < maxPredictions; i++) {
+        const row = document.createElement('div');
+        row.className = 'label-row';
+
+        const header = document.createElement('div');
+        header.className = 'label-header';
+
+        const name = document.createElement('span');
+        name.className = 'label-name';
+        name.textContent = `Classe ${i + 1}`;
+
+        const pct = document.createElement('span');
+        pct.className = 'label-pct';
+        pct.textContent = '0%';
+
+        header.appendChild(name);
+        header.appendChild(pct);
+
+        const progressWrap = document.createElement('div');
+        progressWrap.className = 'progress';
+
+        const bar = document.createElement('div');
+        bar.className = 'progress-bar';
+        bar.style.width = '0%';
+        bar.setAttribute('role', 'progressbar');
+        bar.setAttribute('aria-valuenow', '0');
+        bar.setAttribute('aria-valuemin', '0');
+        bar.setAttribute('aria-valuemax', '100');
+
+        progressWrap.appendChild(bar);
+        row.appendChild(header);
+        row.appendChild(progressWrap);
+        container.appendChild(row);
+
+        labelRows.push({ row, name, pct, bar });
+      }
+    }
+
+    async function loop() {
+      webcam.update();
+      await predict();
+      window.requestAnimationFrame(loop);
+    }
+
+    async function predict() {
+      const predictions = await model.predict(webcam.canvas);
+      let topIdx = 0, topVal = 0;
+
+      predictions.forEach((p, i) => {
+        if (p.probability > topVal) { topVal = p.probability; topIdx = i; }
+      });
+
+      predictions.forEach((p, i) => {
+        const { row, name, pct, bar } = labelRows[i];
+        const perc = Math.round(p.probability * 100);
+
+        name.textContent = p.className;
+        pct.textContent = `${perc}%`;
+        bar.style.width = `${perc}%`;
+        bar.setAttribute('aria-valuenow', perc);
+
+        row.classList.toggle('top-class', i === topIdx);
+      });
+    }
+  </script>
+</body>
+</html>
