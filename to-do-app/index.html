@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Gerencie suas tarefas de forma simples e eficiente com o To-Do App.">
+    <title>To-Do App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            background-image:
+                radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(16, 185, 129, 0.06) 0%, transparent 50%);
+            color: #f8fafc;
+            min-height: 100vh;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+        }
+
+        .glass-input {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .glass-input:focus {
+            outline: none;
+            border-color: rgba(99, 102, 241, 0.7);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        .hide { display: none !important; }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #818cf8, #6366f1);
+            box-shadow: 0 6px 24px rgba(99, 102, 241, 0.5);
+            transform: translateY(-1px);
+        }
+        .btn-primary:active { transform: scale(0.98); }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+            transition: all 0.2s;
+        }
+        .btn-success:hover {
+            background: linear-gradient(135deg, #34d399, #10b981);
+            box-shadow: 0 6px 24px rgba(16, 185, 129, 0.45);
+            transform: translateY(-1px);
+        }
+        .btn-success:active { transform: scale(0.98); }
+
+        .task-card {
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            transition: all 0.3s ease;
+        }
+        .task-card:hover { 
+            background: rgba(255, 255, 255, 0.045);
+            border-color: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+        }
+        .task-card.done {
+            opacity: 0.45;
+        }
+        .task-card.done .task-title {
+            text-decoration: line-through;
+            color: #64748b;
+        }
+
+        .badge-work  { background: rgba(59,130,246,0.18); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+        .badge-personal { background: rgba(168,85,247,0.18); color: #c4b5fd; border: 1px solid rgba(168,85,247,0.3); }
+        .badge-study { background: rgba(16,185,129,0.18); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+
+        .error-msg {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+        }
+        .success-msg {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.35s ease forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-indigo-500/40">
+
+    <!-- AUTH WRAPPER -->
+    <div id="auth-wrapper" class="min-h-screen flex items-center justify-center p-6">
+
+        <!-- LOGIN -->
+        <section id="view-login" class="glass rounded-2xl p-8 sm:p-10 w-full max-w-md fade-in">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 mb-4">
+                    <svg class="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-bold tracking-tight text-white mb-1">Bem-vindo de volta</h1>
+                <p class="text-slate-400 text-sm">Faça login para acessar suas tarefas</p>
+            </div>
+
+            <form id="form-login" class="space-y-5" novalidate>
+                <div>
+                    <label for="login-email" class="block text-sm font-medium text-slate-300 mb-1.5">E-mail</label>
+                    <input type="email" id="login-email" class="glass-input w-full rounded-xl px-4 py-3 text-white placeholder-slate-600 text-sm" placeholder="voce@exemplo.com">
+                    <span id="error-login-email" class="hide text-red-400 text-xs mt-1.5 block font-medium"></span>
+                </div>
+                <div>
+                    <label for="login-password" class="block text-sm font-medium text-slate-300 mb-1.5">Senha</label>
+                    <input type="password" id="login-password" class="glass-input w-full rounded-xl px-4 py-3 text-white placeholder-slate-600 text-sm" placeholder="••••••••">
+                    <span id="error-login-password" class="hide text-red-400 text-xs mt-1.5 block font-medium"></span>
+                </div>
+
+                <div id="error-login-global" class="hide error-msg rounded-xl p-3 text-sm text-center"></div>
+
+                <button type="submit" id="btn-login-submit" class="btn-primary w-full text-white font-semibold py-3 px-4 rounded-xl text-sm">
+                    Entrar
+                </button>
+            </form>
+
+            <p class="mt-7 text-center text-sm text-slate-500">
+                Não possui uma conta?
+                <a href="#" id="link-to-register" class="text-indigo-400 hover:text-indigo-300 font-medium transition-colors ml-1">Cadastre-se</a>
+            </p>
+        </section>
+
+        <!-- REGISTER -->
+        <section id="view-register" class="glass rounded-2xl p-8 sm:p-10 w-full max-w-md hide">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 mb-4">
+                    <svg class="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-bold tracking-tight text-white mb-1">Criar conta</h1>
+                <p class="text-slate-400 text-sm">Junte-se e organize seu dia</p>
+            </div>
+
+            <form id="form-register" class="space-y-5" novalidate>
+                <div>
+                    <label for="register-name" class="block text-sm font-medium text-slate-300 mb-1.5">Nome completo</label>
+                    <input type="text" id="register-name" class="glass-input w-full rounded-xl px-4 py-3 text-white placeholder-slate-600 text-sm" placeholder="Nome Sobrenome">
+                    <span id="error-register-name" class="hide text-red-400 text-xs mt-1.5 block font-medium"></span>
+                </div>
+                <div>
+                    <label for="register-email" class="block text-sm font-medium text-slate-300 mb-1.5">E-mail</label>
+                    <input type="email" id="register-email" class="glass-input w-full rounded-xl px-4 py-3 text-white placeholder-slate-600 text-sm" placeholder="voce@exemplo.com">
+                    <span id="error-register-email" class="hide text-red-400 text-xs mt-1.5 block font-medium"></span>
+                </div>
+                <div>
+                    <label for="register-password" class="block text-sm font-medium text-slate-300 mb-1.5">Senha</label>
+                    <input type="password" id="register-password" class="glass-input w-full rounded-xl px-4 py-3 text-white placeholder-slate-600 text-sm" placeholder="••••••••">
+                    <span id="error-register-password" class="hide text-red-400 text-xs mt-1.5 block font-medium"></span>
+                </div>
+
+                <div id="error-register-global" class="hide error-msg rounded-xl p-3 text-sm text-center"></div>
+
+                <button type="submit" id="btn-register-submit" class="btn-success w-full text-white font-semibold py-3 px-4 rounded-xl text-sm">
+                    Criar conta
+                </button>
+            </form>
+
+            <p class="mt-7 text-center text-sm text-slate-500">
+                Já possui uma conta?
+                <a href="#" id="link-to-login" class="text-emerald-400 hover:text-emerald-300 font-medium transition-colors ml-1">Faça login</a>
+            </p>
+        </section>
+
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="view-dashboard" class="hide min-h-screen p-6 max-w-3xl mx-auto">
+
+        <!-- HEADER -->
+        <header class="glass rounded-2xl p-5 mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-white">Minhas Tarefas</h1>
+                    <p class="text-xs text-slate-400">Olá, <span id="user-display-name" class="text-indigo-400 font-semibold"></span></p>
+                </div>
+            </div>
+            <button id="btn-logout" class="flex items-center gap-2 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/60 text-slate-300 hover:text-white px-4 py-2 rounded-xl text-sm font-medium transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                Sair
+            </button>
+        </header>
+
+        <!-- FORM NOVA TAREFA -->
+        <section class="glass rounded-2xl p-7 mb-8">
+            <h2 class="text-base font-semibold text-white mb-5 flex items-center gap-2">
+                <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Nova Tarefa
+            </h2>
+            <form id="form-task" class="space-y-4" novalidate>
+                <div class="grid sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="task-title" class="block text-sm font-medium text-slate-300 mb-1.5">Título <span class="text-red-400">*</span></label>
+                        <input type="text" id="task-title" class="glass-input w-full rounded-xl px-4 py-3 text-white placeholder-slate-600 text-sm" placeholder="Ex: Revisar relatório">
+                        <span id="error-task-title" class="hide text-red-400 text-xs mt-1.5 block font-medium"></span>
+                    </div>
+                    <div>
+                        <label for="task-type" class="block text-sm font-medium text-slate-300 mb-1.5">Tipo</label>
+                        <select id="task-type" class="glass-input w-full rounded-xl px-4 py-3 text-white text-sm appearance-none cursor-pointer">
+                            <option value="work" class="bg-slate-900">Trabalho</option>
+                            <option value="personal" class="bg-slate-900">Pessoal</option>
+                            <option value="study" class="bg-slate-900">Estudos</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label for="task-description" class="block text-sm font-medium text-slate-300 mb-1.5">Descrição <span class="text-slate-500 text-xs font-normal">(opcional)</span></label>
+                    <textarea id="task-description" rows="3" class="glass-input w-full rounded-xl px-4 py-3 text-white placeholder-slate-600 text-sm resize-none" placeholder="Detalhes sobre a tarefa..."></textarea>
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit" id="btn-add-task" class="btn-primary text-white font-semibold py-2.5 px-6 rounded-xl text-sm flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Adicionar Tarefa
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- LISTA DE TAREFAS -->
+        <section>
+            <h2 class="text-base font-semibold text-white mb-5 flex items-center gap-2">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                </svg>
+                Lista de Tarefas
+                <span id="task-count" class="ml-auto text-xs text-slate-500 font-normal"></span>
+            </h2>
+            <div id="task-list" class="space-y-3">
+                <!-- Tarefas renderizadas via JS -->
+            </div>
+        </section>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
